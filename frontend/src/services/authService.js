@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config.js';
 
 export const registerUser = async (userData) => {
-    const url = `${API_BASE_URL}/accounts/register/`;
+    const url = `${API_BASE_URL}/register/`;
     return axios.post(url, userData);
 };
 
