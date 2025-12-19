@@ -1,130 +1,123 @@
-// frontend/src/components/Dashboard.jsx - COMPLETE WITH AXIOS
+// frontend/src/components/Dashboard.jsx - MOBILE OPTIMIZED
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import GpaCalculator from './GpaCalculator.jsx';
-import axios from 'axios';
 
 function Dashboard() {
-  const { user, logout, token } = useAuth();
+  const { user, logout } = useAuth();
   const [isCalculating, setIsCalculating] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'tools'
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
-
-  // Configure axios defaults
-  useEffect(() => {
-    axios.defaults.baseURL = 'http://localhost:8000';
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-  }, [token]);
 
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile) document.body.style.overflowX = 'hidden';
+      if (mobile) {
+        document.body.style.overflowX = 'hidden';
+      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load chat history with axios
+  // Load chat history
   const loadChatHistory = async () => {
     try {
       setIsLoadingHistory(true);
-      setError('');
+      const token = localStorage.getItem('token');
+      const headers = token ? { 
+        'Authorization': `Token ${token}` 
+      } : {};
       
-      const response = await axios.get('/api/chat/history/', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      const response = await fetch('http://localhost:8000/api/chat/history/', {
+        headers: headers
       });
       
-      if (response.data.success && response.data.history) {
-        const formattedMessages = response.data.history.map(msg => ({
-          sender: msg.sender === 'user' ? 'user' : 'ai',
-          text: msg.text,
-          time: msg.time
-        }));
-        setMessages(formattedMessages);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.history) {
+          const formattedMessages = data.history.map(msg => ({
+            sender: msg.sender === 'user' ? 'user' : 'ai',
+            text: msg.text,
+            time: msg.time
+          }));
+          setMessages(formattedMessages);
+        }
       }
-    } catch (err) {
-      console.log('No chat history:', err);
-      setError('Could not load chat history. Backend may be offline.');
+    } catch (error) {
+      console.log('No chat history:', error);
     } finally {
       setIsLoadingHistory(false);
     }
   };
 
-  useEffect(() => { 
-    loadChatHistory(); 
+  useEffect(() => {
+    loadChatHistory();
   }, []);
 
-  // Auto-scroll
+  // Auto-scroll chat
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   
   useEffect(() => { 
-    if (!isLoadingHistory) scrollToBottom(); 
+    if (!isLoadingHistory) {
+      scrollToBottom(); 
+    }
   }, [messages, isLoadingHistory]);
 
-  // Send message with axios
+  // Send message
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-
+    
     const userMessage = input;
     setInput('');
     setLoading(true);
-    setError('');
     
-    // Add user message immediately
     setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
-
+    
     try {
-      const response = await axios.post('/api/chat/', {
-        message: userMessage,
-        context: 'student'
-      }, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Token ${token}` })
+      };
+      
+      const response = await fetch('http://localhost:8000/api/chat/', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ 
+          message: userMessage,
+          context: 'student'
+        }),
       });
-
-      if (response.data.success) {
-        setMessages(prev => [...prev, { sender: 'ai', text: response.data.reply }]);
-      } else {
-        setMessages(prev => [...prev, { 
-          sender: 'ai', 
-          text: `Error: ${response.data.error || 'Unknown error'}` 
-        }]);
-      }
-    } catch (err) {
-      console.error('Chat error:', err);
       
-      let errorMessage = '⚠️ Could not connect to server. ';
-      if (err.response) {
-        // Server responded with error
-        errorMessage = `Server error: ${err.response.status} - ${err.response.data?.error || 'Unknown'}`;
-      } else if (err.request) {
-        // Request made but no response
-        errorMessage = 'No response from server. Is backend running on port 8000?';
-      } else {
-        // Request setup error
-        errorMessage = `Request error: ${err.message}`;
-      }
+      const data = await response.json();
       
-      setMessages(prev => [...prev, { sender: 'ai', text: errorMessage }]);
-      setError(errorMessage);
+      if (data.success) {
+        setMessages(prev => [...prev, { sender: 'ai', text: data.reply }]);
+      } else {
+        setMessages(prev => [...prev, { sender: 'ai', text: 'Error: ' + (data.error || 'Unknown') }]);
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { 
+        sender: 'ai', 
+        text: '⚠️ Check backend connection' 
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle Enter key
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -132,22 +125,19 @@ function Dashboard() {
     }
   };
 
+  // Clear chat
   const clearChat = () => {
-    if (window.confirm('Clear all messages from this chat?')) {
+    if (window.confirm('Clear chat history?')) {
       setMessages([]);
-      setError('');
     }
   };
 
-  const reloadChat = async () => {
-    await loadChatHistory();
-  };
-
+  // Quick action buttons
   const quickActions = [
-    { label: 'GPA Help', text: 'How to calculate my GPA with 5.00 scale?', emoji: '📊' },
-    { label: 'Study Help', text: 'I need study assistance for exams', emoji: '📚' },
-    { label: 'Business Help', text: 'Business planning advice for SMEs', emoji: '💼' },
-    { label: 'Features', text: 'What features does Thinkora have?', emoji: '🤔' },
+    { label: 'GPA Help', text: 'How to calculate my GPA?', emoji: '📊' },
+    { label: 'Study Help', text: 'I need study assistance', emoji: '📚' },
+    { label: 'Business Help', text: 'Business planning advice', emoji: '💼' },
+    { label: 'Hello', text: 'Hello Thinkora!', emoji: '👋' },
   ];
 
   if (!user) {
@@ -162,9 +152,6 @@ function Dashboard() {
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2em', marginBottom: '20px' }}>🤖</div>
           <div>Loading your dashboard...</div>
-          <div style={{ marginTop: '10px', fontSize: '0.9em', color: '#666' }}>
-            Please wait while we authenticate...
-          </div>
         </div>
       </div>
     );
@@ -172,15 +159,17 @@ function Dashboard() {
 
   return (
     <div style={{ 
-      minHeight: '100vh', 
-      background: isMobile ? '#fff' : '#f8f9fa', 
-      padding: 0, 
-      margin: 0 
+      minHeight: '100vh',
+      background: isMobile ? '#fff' : '#f8f9fa',
+      padding: 0,
+      margin: 0,
+      maxWidth: '100%',
+      overflowX: 'hidden'
     }}>
-
-      {/* Fixed Header */}
+      
+      {/* MOBILE HEADER - Fixed at top */}
       <div style={{
-        position: 'fixed',
+        position: isMobile ? 'fixed' : 'relative',
         top: 0,
         left: 0,
         right: 0,
@@ -188,14 +177,14 @@ function Dashboard() {
         color: 'white',
         padding: isMobile ? '12px 15px' : '15px 20px',
         zIndex: 1000,
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        height: isMobile ? '70px' : '80px'
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          height: '100%'
+          maxWidth: '1200px',
+          margin: '0 auto'
         }}>
           <div>
             <h1 style={{ 
@@ -203,20 +192,20 @@ function Dashboard() {
               fontSize: isMobile ? '1.2rem' : '1.5rem',
               fontWeight: '600'
             }}>
-              🤖 Thinkora AI
+              🤖 Thinkora
             </h1>
             <div style={{ 
-              fontSize: isMobile ? '0.75rem' : '0.85rem', 
+              fontSize: isMobile ? '0.75rem' : '0.85rem',
               opacity: 0.9,
               marginTop: '3px'
             }}>
-              {user.username} • {messages.length} messages
+              {user.username} • {isMobile ? 'Mobile' : 'Desktop'}
             </div>
           </div>
           
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button
-              onClick={reloadChat}
+              onClick={clearChat}
               style={{
                 background: 'rgba(255,255,255,0.2)',
                 color: 'white',
@@ -227,7 +216,7 @@ function Dashboard() {
                 cursor: 'pointer'
               }}
             >
-              ↻ Reload
+              Clear
             </button>
             <button 
               onClick={logout}
@@ -248,18 +237,17 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Mobile Tabs - Sticky */}
+      {/* MOBILE TABS - Only show on mobile */}
       {isMobile && (
         <div style={{
-          position: 'sticky',
+          position: 'fixed',
           top: '70px',
           left: 0,
           right: 0,
           background: 'white',
           zIndex: 999,
-          display: 'flex',
           borderBottom: '1px solid #e9ecef',
-          height: '50px'
+          display: 'flex'
         }}>
           <button
             onClick={() => setActiveTab('chat')}
@@ -296,56 +284,25 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <div style={{
-        paddingTop: isMobile ? '120px' : '90px',
-        paddingBottom: isMobile ? '20px' : '20px',
+        paddingTop: isMobile ? '130px' : '20px',
+        paddingBottom: isMobile ? '80px' : '20px',
         paddingLeft: isMobile ? '10px' : '20px',
         paddingRight: isMobile ? '10px' : '20px',
-        minHeight: 'calc(100vh - 100px)',
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-
-        {/* Error Alert */}
-        {error && !isMobile && (
-          <div style={{
-            background: '#fff3cd',
-            color: '#856404',
-            padding: '12px 15px',
-            borderRadius: '8px',
-            marginBottom: '15px',
-            border: '1px solid #ffeaa7',
-            fontSize: '0.9em',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>⚠️ {error}</span>
-            <button
-              onClick={() => setError('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#856404',
-                cursor: 'pointer',
-                fontSize: '1.2em'
-              }}
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {/* Desktop Layout */}
-        {!isMobile ? (
+        
+        {/* DESKTOP LAYOUT (side by side) */}
+        {!isMobile && (
           <div style={{ 
             display: 'flex', 
-            gap: '20px', 
-            height: 'calc(100vh - 150px)' 
+            gap: '20px',
+            height: 'calc(100vh - 100px)'
           }}>
             
-            {/* Chat Section - Left */}
+            {/* CHAT SECTION - Desktop */}
             <div style={{ 
               flex: 3,
               display: 'flex',
@@ -362,26 +319,9 @@ function Dashboard() {
                 color: 'white', 
                 padding: '18px 20px',
                 fontWeight: '600',
-                fontSize: '1.1rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                fontSize: '1.1rem'
               }}>
-                <span>💬 AI Assistant</span>
-                <button
-                  onClick={clearChat}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: '15px',
-                    padding: '5px 12px',
-                    fontSize: '0.85rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Clear Chat
-                </button>
+                💬 AI Assistant
               </div>
               
               {/* Chat Messages */}
@@ -401,7 +341,7 @@ function Dashboard() {
                   <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                     <div style={{ fontSize: '2.5em', marginBottom: '15px' }}>🤖</div>
                     <div style={{ fontSize: '1.1rem', marginBottom: '10px', color: '#495057' }}>
-                      Welcome to Thinkora, {user.username}!
+                      Welcome to Thinkora!
                     </div>
                     <div style={{ color: '#6c757d', marginBottom: '30px' }}>
                       Your AI assistant for students and SMEs
@@ -410,13 +350,13 @@ function Dashboard() {
                       background: '#e7f3ff', 
                       padding: '15px', 
                       borderRadius: '10px',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      marginBottom: '20px'
                     }}>
                       <div style={{ fontWeight: '500', marginBottom: '10px' }}>Try asking:</div>
-                      <div>• "How to calculate GPA with 5.00 scale?"</div>
-                      <div>• "Study tips for mathematics"</div>
-                      <div>• "Business plan template for SMEs"</div>
-                      <div>• "Help with WAEC/NECO preparation"</div>
+                      <div>• "How to calculate GPA?"</div>
+                      <div>• "Study tips for exams"</div>
+                      <div>• "Business plan template"</div>
                     </div>
                   </div>
                 ) : (
@@ -448,7 +388,7 @@ function Dashboard() {
                         marginTop: '4px',
                         padding: '0 5px'
                       }}>
-                        {msg.sender === 'user' ? 'You' : 'Thinkora AI'}
+                        {msg.sender === 'user' ? 'You' : 'Thinkora'}
                       </div>
                     </div>
                   ))
@@ -459,25 +399,24 @@ function Dashboard() {
                     textAlign: 'left', 
                     color: '#6c757d', 
                     fontStyle: 'italic',
-                    padding: '10px 5px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
+                    padding: '10px 5px'
                   }}>
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      border: '2px solid #e9ecef',
-                      borderTopColor: '#007bff',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }}></div>
-                    Thinking...
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        border: '2px solid #e9ecef',
+                        borderTopColor: '#007bff',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }}></div>
+                      Thinking...
+                    </span>
                   </div>
                 )}
               </div>
               
-              {/* Chat Input */}
+              {/* Chat Input - Desktop */}
               <div style={{ 
                 borderTop: '1px solid #e9ecef', 
                 padding: '20px',
@@ -523,7 +462,7 @@ function Dashboard() {
                   </button>
                 </div>
                 
-                {/* Quick Actions */}
+                {/* Quick Actions - Desktop */}
                 <div style={{ 
                   display: 'flex',
                   gap: '8px',
@@ -557,7 +496,7 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Tools Section - Right */}
+            {/* TOOLS SECTION - Desktop */}
             <div style={{ 
               flex: 2,
               display: 'flex',
@@ -577,7 +516,7 @@ function Dashboard() {
                   color: '#212529',
                   fontSize: '1.3rem'
                 }}>
-                  🛠️ Tools & Features
+                  🛠️ Tools
                 </h3>
                 
                 <div style={{ 
@@ -623,12 +562,12 @@ function Dashboard() {
                       gap: '8px'
                     }}
                     onClick={() => {
-                      setInput("What AI features do you have?");
+                      setInput("I need AI assistance");
                       setTimeout(() => document.querySelector('input[type="text"]')?.focus(), 100);
                     }}
                   >
                     <span style={{ fontSize: '1.5em' }}>🤖</span>
-                    <span>AI Features</span>
+                    <span>AI Predictor</span>
                   </button>
                 </div>
 
@@ -688,46 +627,21 @@ function Dashboard() {
               </div>
             </div>
           </div>
-        ) : (
-          /* Mobile Layout */
+        )}
+
+        {/* MOBILE LAYOUT - Tab based */}
+        {isMobile && (
           <div style={{ minHeight: 'calc(100vh - 180px)' }}>
             
-            {/* Error Alert - Mobile */}
-            {error && (
-              <div style={{
-                background: '#fff3cd',
-                color: '#856404',
-                padding: '10px',
-                borderRadius: '8px',
-                marginBottom: '15px',
-                border: '1px solid #ffeaa7',
-                fontSize: '0.85em'
-              }}>
-                ⚠️ {error}
-                <button
-                  onClick={() => setError('')}
-                  style={{
-                    float: 'right',
-                    background: 'none',
-                    border: 'none',
-                    color: '#856404',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
-            {/* Chat Tab */}
+            {/* CHAT TAB - Mobile */}
             {activeTab === 'chat' && (
               <div style={{ 
                 display: 'flex',
                 flexDirection: 'column',
-                height: 'calc(100vh - 200px)'
+                height: 'calc(100vh - 220px)'
               }}>
                 
-                {/* Chat Messages */}
+                {/* Chat Messages - Mobile */}
                 <div style={{ 
                   flex: 1,
                   padding: '15px 0',
@@ -823,7 +737,7 @@ function Dashboard() {
                   )}
                 </div>
                 
-                {/* Chat Input */}
+                {/* Chat Input - Mobile */}
                 <div style={{ 
                   background: 'white',
                   padding: '15px',
@@ -869,11 +783,11 @@ function Dashboard() {
               </div>
             )}
 
-            {/* Tools Tab */}
+            {/* TOOLS TAB - Mobile */}
             {activeTab === 'tools' && (
               <div style={{ padding: '15px 0' }}>
                 
-                {/* GPA Calculator Card */}
+                {/* GPA Calculator Card - Mobile */}
                 <div style={{ 
                   background: 'white',
                   borderRadius: '12px',
@@ -913,7 +827,111 @@ function Dashboard() {
                   )}
                 </div>
 
-                {/* Status Card */}
+                {/* Quick Actions - Mobile */}
+                <div style={{ 
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '15px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <h4 style={{ margin: '0 0 15px 0', fontSize: '1.1rem' }}>
+                    ⚡ Quick Actions
+                  </h4>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setInput("Calculate my GPA");
+                        setActiveTab('chat');
+                      }}
+                      style={{
+                        padding: '15px 10px',
+                        background: '#e7f3ff',
+                        color: '#0056b3',
+                        border: '1px solid #b3d7ff',
+                        borderRadius: '10px',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.5em' }}>📊</span>
+                      <span>Calculate GPA</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setInput("Study tips for exams");
+                        setActiveTab('chat');
+                      }}
+                      style={{
+                        padding: '15px 10px',
+                        background: '#f0f9ff',
+                        color: '#0c5460',
+                        border: '1px solid #bee5eb',
+                        borderRadius: '10px',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.5em' }}>📚</span>
+                      <span>Study Help</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setInput("Business plan template");
+                        setActiveTab('chat');
+                      }}
+                      style={{
+                        padding: '15px 10px',
+                        background: '#f4f4f4',
+                        color: '#383d41',
+                        border: '1px solid #d6d8db',
+                        borderRadius: '10px',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.5em' }}>💼</span>
+                      <span>Business Help</span>
+                    </button>
+                    
+                    <button
+                      onClick={clearChat}
+                      style={{
+                        padding: '15px 10px',
+                        background: '#fff5f5',
+                        color: '#721c24',
+                        border: '1px solid #f5c6cb',
+                        borderRadius: '10px',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.5em' }}>🗑️</span>
+                      <span>Clear Chat</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status Card - Mobile */}
                 <div style={{ 
                   background: 'white',
                   borderRadius: '12px',
@@ -955,7 +973,7 @@ function Dashboard() {
                     borderRadius: '8px',
                     fontSize: '0.85rem'
                   }}>
-                    <strong>💡 Tip:</strong> Tap any quick action in chat tab!
+                    <strong>💡 Tip:</strong> Tap any quick action to switch to chat!
                   </div>
                 </div>
               </div>
@@ -964,6 +982,30 @@ function Dashboard() {
         )}
       </div>
 
+      {/* Footer - Mobile only */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'white',
+          borderTop: '1px solid #e9ecef',
+          padding: '10px 15px',
+          display: 'flex',
+          justifyContent: 'center',
+          zIndex: 999
+        }}>
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: '#6c757d',
+            textAlign: 'center'
+          }}>
+            Thinkora MVP • Chat: {messages.length} messages • GPA: 5.00 Scale
+          </div>
+        </div>
+      )}
+
       {/* Spinner Animation */}
       <style>{`
         @keyframes spin {
@@ -971,7 +1013,7 @@ function Dashboard() {
           100% { transform: rotate(360deg); }
         }
         
-        /* Better scrollbar */
+        /* Better scrollbar for mobile */
         ::-webkit-scrollbar {
           width: 6px;
         }
@@ -993,6 +1035,11 @@ function Dashboard() {
         button {
           -webkit-tap-highlight-color: transparent;
           user-select: none;
+        }
+        
+        /* Better touch targets */
+        input, button {
+          font-size: 16px !important; /* Prevents zoom on iOS */
         }
       `}</style>
     </div>
