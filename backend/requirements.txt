@@ -1,10 +1,20 @@
-asgiref==3.11.0
-Django==6.0
-django-cors-headers==4.9.0
-djangorestframework==3.16.1
-djangorestframework_simplejwt==5.5.1
-gunicorn==23.0.0
-packaging==25.0
-PyJWT==2.10.1
-sqlparse==0.5.4
-python-dotenv==1.0.0
+# Core Django
+Django==4.2.16
+
+# REST Framework
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+
+# Database
+dj-database-url==2.1.0
+psycopg2-binary==2.9.9  # PostgreSQL for Render
+
+# Security & CORS
+django-cors-headers==4.3.1
+
+# Environment
+python-dotenv==1.0.1
+
+# Production
+whitenoise==6.6.0        # Static files
+gunicorn==21.2.0         # Production server
