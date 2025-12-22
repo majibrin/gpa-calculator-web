@@ -16,8 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // REAL BACKEND API BASE
-  const API_BASE = 'http://localhost:8000/api';
-
+  const API_BASE = import.meta.env.VITE_API_BASE;
   // Initialize auth - check token validity
   useEffect(() => {
     const initializeAuth = async () => {
