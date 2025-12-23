@@ -20,7 +20,7 @@ const AuthForm = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/api/token/' : '/api/register/';
+      const endpoint = isLogin ? '/token/' : '/register/';
       const payload = isLogin ? { username: formData.username, password: formData.password } 
                               : formData;
       const res = await axios.post(endpoint, payload);
