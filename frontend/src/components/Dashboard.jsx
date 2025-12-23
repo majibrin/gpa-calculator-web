@@ -31,7 +31,7 @@ function Dashboard() {
     try {
       setIsLoadingHistory(true);
       setError('');
-      const res = await axios.get('/api/chat/history/', {
+      const res = await axios.get('/chat/history/', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.data.success && res.data.history) {
@@ -69,7 +69,7 @@ function Dashboard() {
 
     try {
       const res = await axios.post(
-        '/api/chat/',
+        '/chat/',
         { message: userMessage, context: 'student' },
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
