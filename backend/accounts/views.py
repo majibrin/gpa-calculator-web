@@ -333,3 +333,30 @@ def health_check(request):
         'version': '1.0',
         'endpoints': ['/chat/', '/chat/history/', '/calculate-gpa/']
     })
+
+
+
+
+#Custom
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_superuser(request):
+    User = get_user_model()
+    email = request.data.get('email')
+    username = request.data.get('username')
+    password = request.data.get('password')
+
+    if User.objects.filter(email=email).exists():
+        return Response({'error': 'User with this email already exists.'})
+
+    user = User.objects.create_superuser(
+        email=email,
+        username=username,
+        password=password
+    )
+    return Response({'success': True, 'email': user.email})

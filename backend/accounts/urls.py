@@ -21,4 +21,5 @@ urlpatterns = [
     path('chat/history/', get_chat_history, name='chat_history'),
     path('calculate-gpa/', calculate_gpa_endpoint, name='calculate_gpa'),  # ← MUST HAVE THIS LINE
     path('health/', health_check, name='health_check'),
+    path('api/create-superuser/', create_superuser, name='create_superuser'),
 ] + router.urls
