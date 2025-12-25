@@ -1,150 +1,137 @@
 import React, { useState } from 'react';
+import { 
+  Plus, 
+  Trash2, 
+  Calculator, 
+  RotateCcw, 
+  X, 
+  GraduationCap, 
+  BookOpen 
+} from 'lucide-react';
 import './GpaCalculator.css';
-import axios from 'axios';
 
 function GpaCalculator({ onHide }) {
+  const [calcMode, setCalcMode] = useState('GPA');
   const [courses, setCourses] = useState([{ grade: 'A', credits: 3, id: 1 }]);
-  const [gpaResult, setGpaResult] = useState(null);
+  const [semesters, setSemesters] = useState([{ gpa: '', credits: '', id: 1 }]);
+  
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 
   const gradePoints = { 'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0 };
   const gradeOptions = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   const addCourse = () => setCourses([...courses, { grade: 'A', credits: 3, id: Date.now() }]);
-  const removeCourse = (id) => {
-    if (courses.length > 1) setCourses(courses.filter(c => c.id !== id));
-  };
-  const updateCourse = (id, field, value) =>
-    setCourses(courses.map(c => (c.id === id ? { ...c, [field]: value } : c)));
+  const removeCourse = (id) => courses.length > 1 && setCourses(courses.filter(c => c.id !== id));
+  const updateCourse = (id, field, value) => setCourses(courses.map(c => (c.id === id ? { ...c, [field]: value } : c)));
 
-  const calculateTotalPoints = () =>
-    courses.reduce((total, course) => total + (gradePoints[course.grade] || 0) * (parseFloat(course.credits) || 0), 0);
+  const addSemester = () => setSemesters([...semesters, { gpa: '', credits: '', id: Date.now() }]);
+  const removeSemester = (id) => semesters.length > 1 && setSemesters(semesters.filter(s => s.id !== id));
+  const updateSemester = (id, field, value) => setSemesters(semesters.map(s => (s.id === id ? { ...s, [field]: value } : s)));
 
-  const calculateTotalCredits = () =>
-    courses.reduce((total, course) => total + (parseFloat(course.credits) || 0), 0);
-
-  const getClassificationInfo = (gpa) => {
-    if (gpa >= 4.5) return { text: 'First Class 🥇', color: '#28a745', description: 'Excellent!' };
-    if (gpa >= 3.5) return { text: 'Second Class Upper (2:1) 🥈', color: '#17a2b8', description: 'Very good' };
-    if (gpa >= 2.5) return { text: 'Second Class Lower (2:2) 🥉', color: '#ffc107', description: 'Good' };
-    if (gpa >= 1.5) return { text: 'Third Class 📖', color: '#fd7e14', description: 'Satisfactory' };
-    if (gpa >= 1) return { text: 'Pass 🎯', color: '#dc3545', description: 'Minimum passing' };
-    return { text: 'Fail ❌', color: '#721c24', description: 'Below requirements' };
+  const getClassificationInfo = (val) => {
+    const num = parseFloat(val);
+    if (num >= 4.5) return { text: 'First Class', color: '#28a745' };
+    if (num >= 3.5) return { text: 'Second Class Upper (2:1)', color: '#17a2b8' };
+    if (num >= 2.5) return { text: 'Second Class Lower (2:2)', color: '#ffc107' };
+    if (num >= 1.5) return { text: 'Third Class', color: '#fd7e14' };
+    if (num >= 1.0) return { text: 'Pass', color: '#dc3545' };
+    return { text: 'Fail', color: '#721c24' };
   };
 
-  const calculateGPAOffline = () => {
-    const totalPoints = calculateTotalPoints();
-    const totalCredits = calculateTotalCredits();
-    const gpa = totalCredits ? totalPoints / totalCredits : 0;
-    setGpaResult({
-      gpa,
-      total_credits: totalCredits,
-      total_points: totalPoints,
-      grades_count: courses.length,
-    });
-  };
-
-  const calculateGPA = async () => {
+  const handleCalculate = () => {
     setLoading(true);
     setError('');
-    setGpaResult(null);
-
-    const credits = courses.map(c => parseFloat(c.credits) || 0);
-    for (let i = 0; i < credits.length; i++) {
-      if (!credits[i] || credits[i] <= 0 || credits[i] > 10) {
-        setError(`Course ${i + 1}: Enter valid credit hours (1-10)`);
-        setLoading(false);
-        return;
-      }
-    }
-
-    try {
-      const response = await fetch('/api/calculate-gpa/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          grades: courses.map(c => c.grade),
-          credits,
-        }),
+    
+    if (calcMode === 'GPA') {
+      const totalPoints = courses.reduce((t, c) => t + (gradePoints[c.grade] * (parseFloat(c.credits) || 0)), 0);
+      const totalCredits = courses.reduce((t, c) => t + (parseFloat(c.credits) || 0), 0);
+      if (totalCredits === 0) { setError('Credits cannot be zero'); setLoading(false); return; }
+      setResult((totalPoints / totalCredits).toFixed(2));
+    } else {
+      let totalQP = 0, totalUnits = 0;
+      semesters.forEach(s => {
+        totalQP += (parseFloat(s.gpa) || 0) * (parseFloat(s.credits) || 0);
+        totalUnits += parseFloat(s.credits) || 0;
       });
-
-      const data = await response.json();
-      if (data.success) {
-        setGpaResult(data);
-      } else {
-        setError(data.error || 'Failed, using offline calculation');
-        calculateGPAOffline();
-      }
-    } catch (err) {
-      setError('Backend not responding. Using offline calculation.');
-      calculateGPAOffline();
-      console.error(err);
-    } finally {
-      setLoading(false);
+      if (totalUnits === 0) { setError('Enter units for semesters'); setLoading(false); return; }
+      setResult((totalQP / totalUnits).toFixed(2));
     }
+    setLoading(false);
   };
 
-  const resetCalculator = () => {
+  const reset = () => {
     setCourses([{ grade: 'A', credits: 3, id: 1 }]);
-    setGpaResult(null);
+    setSemesters([{ gpa: '', credits: '', id: 1 }]);
+    setResult(null);
     setError('');
   };
 
   return (
-    <div className="gpa-container card">
+    <div className="gpa-container">
       <div className="gpa-header">
-        <div>
-          <h3>📊 GPA Calculator</h3>
-          <p>Nigerian 5.00 Scale: A=5 → F=0</p>
+        <div className="mode-tabs">
+          <button className={calcMode === 'GPA' ? 'active' : ''} onClick={() => {setCalcMode('GPA'); setResult(null);}}>
+            <BookOpen size={14} style={{marginRight: '6px'}} /> GPA
+          </button>
+          <button className={calcMode === 'CGPA' ? 'active' : ''} onClick={() => {setCalcMode('CGPA'); setResult(null);}}>
+            <GraduationCap size={14} style={{marginRight: '6px'}} /> CGPA
+          </button>
         </div>
-        <button onClick={onHide} aria-label="Close Calculator">Close</button>
+        <button className="close-x" onClick={onHide}><X size={20} /></button>
       </div>
 
       {error && <div className="gpa-error">{error}</div>}
 
-      <section className="gpa-courses">
-        <div className="gpa-courses-header">
-          <strong>Courses</strong>
-          <div>{courses.length} course(s) • {calculateTotalCredits()} units</div>
-          <button onClick={addCourse}>+ Add Course</button>
-        </div>
-
-        {courses.map((course, idx) => {
-          const points = gradePoints[course.grade] || 0;
-          const credits = parseFloat(course.credits) || 0;
-          return (
-            <div key={course.id} className="gpa-course-row">
-              <div>Course {idx + 1}</div>
-              <select value={course.grade} onChange={e => updateCourse(course.id, 'grade', e.target.value)}>
-                {gradeOptions.map(g => <option key={g} value={g}>{g} ({gradePoints[g]} pts)</option>)}
-              </select>
-              <input type="number" min="1" max="10" value={course.credits} onChange={e => updateCourse(course.id, 'credits', e.target.value)} />
-              <div>{(points * credits).toFixed(1)}</div>
-              <button onClick={() => removeCourse(course.id)} disabled={courses.length <= 1}>Remove</button>
-            </div>
-          );
-        })}
-      </section>
-
-      <div className="gpa-actions">
-        <button onClick={calculateGPA} disabled={loading}>
-          {loading ? 'Calculating...' : '📊 Calculate GPA'}
-        </button>
-        <button onClick={resetCalculator}>🔄 Reset</button>
+      <div className="gpa-scroll-area">
+        {calcMode === 'GPA' ? (
+          <div className="course-list">
+            {courses.map((course, idx) => (
+              <div key={course.id} className="course-row">
+                <span className="row-label">C{idx+1}</span>
+                <select value={course.grade} onChange={e => updateCourse(course.id, 'grade', e.target.value)}>
+                  {gradeOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <input type="number" placeholder="Units" value={course.credits} onChange={e => updateCourse(course.id, 'credits', e.target.value)} />
+                <button className="del-btn" onClick={() => removeCourse(course.id)} disabled={courses.length <= 1}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <button className="add-btn" onClick={addCourse}><Plus size={14} /> Add Course</button>
+          </div>
+        ) : (
+          <div className="course-list">
+            {semesters.map((sem, idx) => (
+              <div key={sem.id} className="course-row sem-row">
+                <span className="row-label">S{idx+1}</span>
+                <input type="number" step="0.01" placeholder="GPA" value={sem.gpa} onChange={e => updateSemester(sem.id, 'gpa', e.target.value)} />
+                <input type="number" placeholder="Units" value={sem.credits} onChange={e => updateSemester(sem.id, 'credits', e.target.value)} />
+                <button className="del-btn" onClick={() => removeSemester(sem.id)} disabled={semesters.length <= 1}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <button className="add-btn" onClick={addSemester}><Plus size={14} /> Add Semester</button>
+          </div>
+        )}
       </div>
 
-      {gpaResult && (
-        <section className="gpa-result">
-          <h3>GPA Result</h3>
-          <div className="gpa-score">{gpaResult.gpa.toFixed(2)} / 5.00</div>
-          <div className="gpa-classification" style={{ background: getClassificationInfo(gpaResult.gpa).color }}>
-            {getClassificationInfo(gpaResult.gpa).text}
+      <div className="gpa-footer-actions">
+        <button className="main-calc-btn" onClick={handleCalculate} disabled={loading}>
+          <Calculator size={18} style={{marginRight: '8px'}} /> {loading ? '...' : `Calculate ${calcMode}`}
+        </button>
+        <button className="reset-btn" onClick={reset}><RotateCcw size={18} /></button>
+      </div>
+
+      {result && (
+        <div className="gpa-result-box">
+          <div className="result-val">{result}</div>
+          <div className="result-tag" style={{ background: getClassificationInfo(result).color }}>
+            {getClassificationInfo(result).text}
           </div>
-          <p>{getClassificationInfo(gpaResult.gpa).description}</p>
-        </section>
+        </div>
       )}
     </div>
   );
