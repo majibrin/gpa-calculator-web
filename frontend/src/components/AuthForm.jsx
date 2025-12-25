@@ -1,10 +1,7 @@
-// ~/.../src/components/AuthForm.jsx
+// ~/Thinkora/src/components/AuthForm.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import authService from '../services/authService';
 import './AuthForm.css';
-
-// ✅ Declare API_URL once
-const API_URL = import.meta.env.VITE_API_URL;
 
 const AuthForm = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,22 +23,24 @@ const AuthForm = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/token/' : '/register/';
-      const payload = isLogin
-        ? { username: formData.username, password: formData.password }
-        : formData;
-
-      // ✅ Use API_URL here
-      const res = await axios.post(`${API_URL}${endpoint}`, payload);
-
-      if (res.data.success) {
-        onAuthSuccess(res.data.user, res.data.token);
+      let userData;
+      if (isLogin) {
+        // Login requires email + password
+        const payload = {
+          email: formData.email,
+          password: formData.password
+        };
+        userData = await authService.login(payload);
       } else {
-        setError(res.data.message || 'Authentication failed');
+        // Registration
+        userData = await authService.register(formData);
       }
+
+      // Callback to parent with user info
+      onAuthSuccess(userData, localStorage.getItem('access_token'));
     } catch (err) {
       console.error(err);
-      setError('Server error. Try again later.');
+      setError(err.response?.data?.error || err.message || 'Server error');
     } finally {
       setLoading(false);
     }
@@ -66,13 +65,24 @@ const AuthForm = ({ onAuthSuccess }) => {
             />
           )}
 
+          {isLogin && (
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          )}
+
           <input
             type="text"
             name="username"
             placeholder="Username"
             value={formData.username}
             onChange={handleChange}
-            required
+            required={!isLogin} // username only required for signup
           />
 
           <input
