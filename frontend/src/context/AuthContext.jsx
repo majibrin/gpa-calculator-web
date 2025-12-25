@@ -32,30 +32,22 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const fetchUser = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/test/`); // Protected endpoint returning current user
-      setUser(res.data);
-      localStorage.setItem('user', JSON.stringify(res.data));
-      return res.data;
-    } catch (err) {
-      logout();
-      return null;
-    }
-  };
-
   const login = async ({ email, password }) => {
     const res = await axios.post(`${API_URL}/token/`, { email, password });
     const { access } = res.data;
-    localStorage.setItem('token', access);
-    setToken(access);
+    const userRes = await axios.get(`${API_URL}/test/`); // optional: fetch user info from backend
+    const loggedUser = userRes.data;
 
-    return await fetchUser();
+    localStorage.setItem('token', access);
+    localStorage.setItem('user', JSON.stringify(loggedUser));
+    setToken(access);
+    setUser(loggedUser);
+    return loggedUser;
   };
 
   const register = async ({ username, email, password }) => {
     await axios.post(`${API_URL}/register/`, { username, email, password });
-    return await login({ email, password }); // auto-login
+    return await login({ email, password }); // auto-login after registration
   };
 
   const logout = () => {
@@ -78,13 +70,15 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column'
-      }}>
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+        }}
+      >
         <img src="/favicon.ico" alt="Loading..." style={{ width: 64, height: 64 }} />
         <span style={{ marginTop: 10 }}>Loading Thinkora...</span>
       </div>
