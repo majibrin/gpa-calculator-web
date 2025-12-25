@@ -32,20 +32,30 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const fetchUser = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/test/`); // Protected endpoint returning current user
+      setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
+      return res.data;
+    } catch (err) {
+      logout();
+      return null;
+    }
+  };
+
   const login = async ({ email, password }) => {
     const res = await axios.post(`${API_URL}/token/`, { email, password });
-    const { access, user } = res.data;
+    const { access } = res.data;
     localStorage.setItem('token', access);
-    localStorage.setItem('user', JSON.stringify(user));
     setToken(access);
-    setUser(user);
-    return user;
+
+    return await fetchUser();
   };
 
   const register = async ({ username, email, password }) => {
     await axios.post(`${API_URL}/register/`, { username, email, password });
-    // Auto-login after registration
-    return await login({ email, password });
+    return await login({ email, password }); // auto-login
   };
 
   const logout = () => {
@@ -56,7 +66,15 @@ export const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   };
 
-  const value = { user, token, login, register, logout, isAuthenticated: !!user };
+  const value = {
+    user,
+    token,
+    login,
+    register,
+    logout,
+    isAuthenticated: !!user,
+    loading,
+  };
 
   if (loading) {
     return (

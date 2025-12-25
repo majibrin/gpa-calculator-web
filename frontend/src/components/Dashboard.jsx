@@ -1,33 +1,33 @@
 // src/components/Dashboard.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import GpaCalculator from './GpaCalculator.jsx';
-import Header from './Header.jsx';
+import Header from './Header';
+import GpaCalculator from './GpaCalculator';
+import Loader from './Loader';
 import axios from 'axios';
 import './Dashboard.css';
 
-// React Icons
-import { FaCommentDots, FaTools, FaRobot, FaUser } from 'react-icons/fa';
-
-function Dashboard() {
-  const { user, logout, token } = useAuth();
-  const [isCalculating, setIsCalculating] = useState(false);
+const Dashboard = () => {
+  const { user, token, logout } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const messagesEndRef = useRef(null);
 
-  // Set axios defaults
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  // Axios config
   useEffect(() => {
-    axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+    axios.defaults.baseURL = API_URL;
     if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }, [token]);
 
-  // Handle window resize for mobile tabs
+  // Mobile detection
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
@@ -40,33 +40,27 @@ function Dashboard() {
       setIsLoadingHistory(true);
       setError('');
       const res = await axios.get('/chat/history/', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.data.success && res.data.history) {
-        setMessages(
-          res.data.history.map((msg) => ({
-            sender: msg.sender === 'user' ? 'user' : 'ai',
-            text: msg.text,
-            time: msg.time,
-          }))
-        );
+        setMessages(res.data.history.map(msg => ({
+          sender: msg.sender === 'user' ? 'user' : 'ai',
+          text: msg.text,
+          time: msg.time
+        })));
       }
     } catch (err) {
       console.error(err);
-      setError('Could not load chat history.');
+      setError('Could not load chat history. Backend may be offline.');
     } finally {
       setIsLoadingHistory(false);
     }
   };
 
-  useEffect(() => {
-    loadChatHistory();
-  }, []);
+  useEffect(() => { loadChatHistory(); }, []);
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoadingHistory]);
+  // Auto-scroll
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoadingHistory]);
 
   // Send message
   const sendMessage = async () => {
@@ -74,151 +68,138 @@ function Dashboard() {
     const userMessage = input;
     setInput('');
     setLoading(true);
-    setMessages((prev) => [...prev, { sender: 'user', text: userMessage }]);
+    setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
+    setError('');
 
     try {
-      const res = await axios.post(
-        '/chat/',
-        { message: userMessage, context: 'student' },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
-      if (res.data.success) {
-        setMessages((prev) => [...prev, { sender: 'ai', text: res.data.reply }]);
-      } else {
-        setMessages((prev) => [...prev, { sender: 'ai', text: res.data.error || 'Error' }]);
-      }
+      const res = await axios.post('/chat/', { message: userMessage, context: 'student' },
+        { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+      if (res.data.success) setMessages(prev => [...prev, { sender: 'ai', text: res.data.reply }]);
+      else setMessages(prev => [...prev, { sender: 'ai', text: res.data.error || 'Unknown error' }]);
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'ai', text: '⚠️ Connection error.' }]);
-    } finally {
-      setLoading(false);
-    }
+      let msg = '⚠️ Could not connect to server.';
+      if (err.response) msg = `Server error: ${err.response.status}`;
+      else if (err.request) msg = 'No response from server.';
+      setMessages(prev => [...prev, { sender: 'ai', text: msg }]);
+      setError(msg);
+    } finally { setLoading(false); }
   };
 
-  // Enter key press
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
+  const handleKeyPress = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+  const clearChat = () => { if (window.confirm('Clear all messages?')) setMessages([]); };
+  const reloadChat = () => loadChatHistory();
 
-  if (!user)
-    return (
-      <div className="dashboard-loading">
-        <div>Loading...</div>
-      </div>
-    );
+  const quickActions = [
+    { label: 'GPA Help', text: 'How to calculate my GPA with 5.00 scale?', emoji: '📊' },
+    { label: 'Study Help', text: 'I need study assistance for exams', emoji: '📚' },
+    { label: 'Business Help', text: 'Business planning advice for SMEs', emoji: '💼' },
+    { label: 'Features', text: 'What features does Thinkora have?', emoji: '🤔' },
+  ];
+
+  if (!user) return <Loader message="Loading your dashboard..." />;
 
   return (
     <div className="dashboard-container">
-      <Header user={user} onLogout={logout} />
+      <Header logout={logout} />
 
+      {/* Mobile Tabs */}
       {isMobile && (
         <div className="mobile-tabs">
-          <button
-            className={activeTab === 'chat' ? 'active' : ''}
-            onClick={() => setActiveTab('chat')}
-          >
-            <FaCommentDots size={16} style={{ marginRight: 4 }} /> Chat
-          </button>
-          <button
-            className={activeTab === 'tools' ? 'active' : ''}
-            onClick={() => setActiveTab('tools')}
-          >
-            <FaTools size={16} style={{ marginRight: 4 }} /> Tools
-          </button>
+          <button className={activeTab === 'chat' ? 'active' : ''} onClick={() => setActiveTab('chat')}>💬 Chat</button>
+          <button className={activeTab === 'tools' ? 'active' : ''} onClick={() => setActiveTab('tools')}>🛠️ Tools</button>
         </div>
       )}
 
       <div className="dashboard-main">
-        {/* Chat Section */}
-        {(!isMobile || activeTab === 'chat') && (
-          <div className="chat-section">
-            {!isMobile && (
+
+        {/* Error Alert */}
+        {error && <div className="dashboard-error">{error} <button onClick={() => setError('')}>×</button></div>}
+
+        {/* Desktop Layout */}
+        {!isMobile ? (
+          <div className="dashboard-desktop">
+
+            {/* Chat Section */}
+            <div className="chat-section">
               <div className="chat-header">
-                <span>
-                  <FaRobot style={{ marginRight: 6 }} /> Thinkora Assistant
-                </span>
-                <button
-                  onClick={() => setMessages([])}
-                  style={{ fontSize: '0.7rem' }}
-                >
-                  Clear
-                </button>
+                💬 AI Assistant
+                <button onClick={clearChat}>Clear Chat</button>
+              </div>
+              <div className="chat-messages">
+                {isLoadingHistory ? <Loader message="Loading chat history..." />
+                  : messages.length === 0 ? (
+                    <div style={{ textAlign: 'center' }}>Welcome to Thinkora, {user.username}!</div>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <div key={idx} className={`chat-message ${msg.sender}`}>
+                        <div className="bubble">{msg.text}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '4px' }}>
+                          {msg.sender === 'user' ? 'You' : 'Thinkora AI'}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                <div ref={messagesEndRef} />
+                {loading && <Loader message="Thinking..." />}
+              </div>
+              <div className="chat-input">
+                <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={loading}/>
+                <button onClick={sendMessage} disabled={loading || !input.trim()}>Send</button>
+              </div>
+            </div>
+
+            {/* Tools Section */}
+            <div className="tools-section">
+              <div className="card">
+                <h3>🛠️ Tools & Features</h3>
+                <div className="tools-grid">
+                  <button onClick={() => setIsCalculating(!isCalculating)}>📊 GPA Calculator</button>
+                  <button onClick={() => { setInput("What AI features do you have?"); }}> 🤖 AI Features</button>
+                </div>
+                {isCalculating && <GpaCalculator onHide={() => setIsCalculating(false)} />}
+              </div>
+              <div className="card">
+                <h4>📊 System Status</h4>
+                <div>Backend: 🟢 Online</div>
+                <div>Messages: {messages.length}</div>
+                <div>GPA Scale: 5.00</div>
+                <div>User: {user.username}</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Mobile Layout */
+          <>
+            {activeTab === 'chat' && (
+              <div className="chat-section">
+                <div className="chat-messages">
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className={`chat-message ${msg.sender}`}>
+                      <div className="bubble">{msg.text}</div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="chat-input">
+                  <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type message..."/>
+                  <button onClick={sendMessage} disabled={loading || !input.trim()}>Send</button>
+                </div>
               </div>
             )}
-
-            <div className="chat-messages">
-              {isLoadingHistory ? (
-                <div className="chat-loading">Loading...</div>
-              ) : messages.length === 0 ? (
-                <div className="chat-empty">
-                  Hello {user.username}, how can I help?
+            {activeTab === 'tools' && (
+              <div className="tools-section">
+                <div className="card">
+                  <h3>📊 GPA Calculator</h3>
+                  <button onClick={() => setIsCalculating(!isCalculating)}>{isCalculating ? 'Close' : 'Open'}</button>
+                  {isCalculating && <GpaCalculator onHide={() => setIsCalculating(false)} />}
                 </div>
-              ) : (
-                messages.map((msg, idx) => (
-                  <div key={idx} className={`chat-message ${msg.sender}`}>
-                    <div className="bubble">
-                      {msg.sender === 'user' ? (
-                        <FaUser style={{ marginRight: 4 }} />
-                      ) : (
-                        <FaRobot style={{ marginRight: 4 }} />
-                      )}
-                      {msg.text}
-                    </div>
-                    <div className="bubble-info">
-                      {msg.sender === 'user' ? 'You' : 'Thinkora AI'}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-              {loading && (
-                <div className="chat-message ai">
-                  <div className="bubble">Typing...</div>
-                </div>
-              )}
-            </div>
-
-            <div className="chat-input">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
-                disabled={loading}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={loading || !input.trim()}
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tools Section */}
-        {(!isMobile || activeTab === 'tools') && (
-          <div className="tools-section">
-            <div className="card">
-              <h3>
-                <FaTools style={{ marginRight: 4 }} /> Tools
-              </h3>
-              <button
-                onClick={() => setIsCalculating(!isCalculating)}
-                style={{ width: '100%', padding: '0.5rem', marginBottom: '10px' }}
-              >
-                {isCalculating ? 'Close GPA Calc' : 'Open GPA Calc'}
-              </button>
-              {isCalculating && <GpaCalculator onHide={() => setIsCalculating(false)} />}
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;

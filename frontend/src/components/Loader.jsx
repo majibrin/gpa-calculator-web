@@ -1,17 +1,15 @@
+// src/components/Loader.jsx
 import React from 'react';
+import loaderImg from '../assets/loader.png';
 import './Loader.css';
-import loader from '../assets/loader.png';
 
-function Loader({ text = 'Loading...' }) {
+const Loader = ({ message = 'Loading...' }) => {
   return (
     <div className="loader-container">
-      <div className="loader-circle">
-        <img src={loader} alt="Logo" className="loader-logo" />
-        <div className="loader-ring"></div>
-      </div>
-      <p className="loader-text">{text}</p>
+      <img src={loaderImg} alt="Loading..." className="loader-image" />
+      <span className="loader-text">{message}</span>
     </div>
   );
-}
+};
 
 export default Loader;
