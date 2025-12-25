@@ -1,24 +1,20 @@
 // src/components/AuthForm.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './AuthForm.css';
 import loader from '../assets/loader.png';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const AuthForm = () => {
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
 
-const AuthForm = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    email: '',
-    username: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = e => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -26,31 +22,12 @@ const AuthForm = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      let userObj;
-
       if (isLogin) {
-        const res = await axios.post(`${API_URL}/token/`, {
-          email: formData.email,
-          password: formData.password
-        });
-        const user = res.data.user || { email: formData.email, username: '' };
-        localStorage.setItem('user', JSON.stringify(user));
-        onAuthSuccess(user, res.data.access);
+        await login({ email: formData.email, password: formData.password });
       } else {
-        await axios.post(`${API_URL}/register/`, {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password
-        });
-        const loginRes = await axios.post(`${API_URL}/token/`, {
-          email: formData.email,
-          password: formData.password
-        });
-        userObj = loginRes.data.user || { email: formData.email, username: formData.username };
-        localStorage.setItem('user', JSON.stringify(userObj));
-        onAuthSuccess(userObj, loginRes.data.access);
+        await register({ username: formData.username, email: formData.email, password: formData.password });
       }
-
+      navigate('/'); // redirect to dashboard on success
     } catch (err) {
       console.error(err.response?.data || err);
       setError(err.response?.data?.detail || err.response?.data?.error || err.message || 'Server error');
@@ -68,7 +45,9 @@ const AuthForm = ({ onAuthSuccess }) => {
 
         <form onSubmit={handleSubmit}>
           <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-          {!isLogin && <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />}
+          {!isLogin && (
+            <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
+          )}
           <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
           <button type="submit" disabled={loading}>
             {loading ? (isLogin ? 'Logging in...' : 'Signing up...') : (isLogin ? 'Login' : 'Sign Up')}
