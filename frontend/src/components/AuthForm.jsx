@@ -1,4 +1,3 @@
-// src/components/AuthForm.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -27,7 +26,7 @@ const AuthForm = () => {
       } else {
         await register({ username: formData.username, email: formData.email, password: formData.password });
       }
-      navigate('/'); // redirect to dashboard on success
+      navigate('/'); // redirect to dashboard
     } catch (err) {
       console.error(err.response?.data || err);
       setError(err.response?.data?.detail || err.response?.data?.error || err.message || 'Server error');
@@ -44,11 +43,32 @@ const AuthForm = () => {
         {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
           {!isLogin && (
-            <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
           )}
-          <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
           <button type="submit" disabled={loading}>
             {loading ? (isLogin ? 'Logging in...' : 'Signing up...') : (isLogin ? 'Login' : 'Sign Up')}
           </button>
@@ -56,7 +76,12 @@ const AuthForm = () => {
 
         <div className="auth-toggle">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-          <span onClick={() => { setIsLogin(!isLogin); setError(''); }}>
+          <span
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setError('');
+            }}
+          >
             {isLogin ? 'Sign Up' : 'Login'}
           </span>
         </div>

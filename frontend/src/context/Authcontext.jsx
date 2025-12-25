@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -17,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Sync axios auth header
+  // Sync axios auth header whenever token changes
   useEffect(() => {
     if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     else delete axios.defaults.headers.common['Authorization'];
@@ -26,28 +25,39 @@ export const AuthProvider = ({ children }) => {
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser && token) {
+    const storedToken = localStorage.getItem('token');
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
     }
     setLoading(false);
   }, []);
 
   const login = async ({ email, password }) => {
+    // Get token first
     const res = await axios.post(`${API_URL}/token/`, { email, password });
     const { access } = res.data;
-    const userRes = await axios.get(`${API_URL}/test/`); // optional: fetch user info from backend
+
+    // Set token immediately
+    localStorage.setItem('token', access);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+    setToken(access);
+
+    // Fetch user info from protected endpoint
+    const userRes = await axios.get(`${API_URL}/test/`);
     const loggedUser = userRes.data;
 
-    localStorage.setItem('token', access);
     localStorage.setItem('user', JSON.stringify(loggedUser));
-    setToken(access);
     setUser(loggedUser);
+
     return loggedUser;
   };
 
   const register = async ({ username, email, password }) => {
     await axios.post(`${API_URL}/register/`, { username, email, password });
-    return await login({ email, password }); // auto-login after registration
+    // Auto-login after registration
+    return await login({ email, password });
   };
 
   const logout = () => {
@@ -58,15 +68,7 @@ export const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   };
 
-  const value = {
-    user,
-    token,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!user,
-    loading,
-  };
+  const value = { user, token, login, register, logout, isAuthenticated: !!user, loading };
 
   if (loading) {
     return (
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          flexDirection: 'column',
+          flexDirection: 'column'
         }}
       >
         <img src="/favicon.ico" alt="Loading..." style={{ width: 64, height: 64 }} />
