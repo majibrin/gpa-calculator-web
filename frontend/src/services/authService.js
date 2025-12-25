@@ -1,4 +1,4 @@
-// ~/Thinkora/src/services/authService.js
+// src/services/authService.js
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -13,24 +13,22 @@ const authService = {
   // LOGIN with email + password
   login: async ({ email, password }) => {
     const response = await api.post('/token/', { email, password });
-
-    const { access, refresh } = response.data;
+    const { access, refresh, user } = response.data; // backend must return user object {email, username}
 
     // Store tokens
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
 
     // Minimal user object
-    const user = { email };
-    localStorage.setItem('user', JSON.stringify(user));
+    const currentUser = user || { email, username: '' };
+    localStorage.setItem('user', JSON.stringify(currentUser));
 
-    return user;
+    return currentUser;
   },
 
   // REGISTER new user
   register: async ({ username, email, password }) => {
     const response = await api.post('/register/', { username, email, password });
-
     // Auto-login after registration
     return await authService.login({ email, password });
   },
@@ -58,7 +56,6 @@ const authService = {
 
     const response = await api.post('/token/refresh/', { refresh });
     const { access } = response.data;
-
     localStorage.setItem('access_token', access);
     return access;
   },

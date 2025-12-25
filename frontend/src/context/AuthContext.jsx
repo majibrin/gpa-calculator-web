@@ -15,7 +15,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token exists
     if (authService.isAuthenticated()) {
       setUser(authService.getCurrentUser());
     }
@@ -24,9 +23,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const userData = await authService.login(credentials);
-      setUser(userData);
-      return { success: true };
+      const currentUser = await authService.login(credentials);
+      setUser(currentUser);
+      return { success: true, user: currentUser };
     } catch (err) {
       throw err;
     }
@@ -34,12 +33,9 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      await authService.register(userData);
-      // Auto-login after registration
-      return await login({
-        username: userData.username,
-        password: userData.password
-      });
+      const currentUser = await authService.register(userData);
+      setUser(currentUser);
+      return { success: true, user: currentUser };
     } catch (err) {
       throw err;
     }
@@ -56,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     login,
     register,
-    logout
+    logout,
   };
 
   if (loading) {
@@ -67,14 +63,11 @@ export const AuthProvider = ({ children }) => {
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        Loading Thinkora...
+        <img src="/favicon.ico" alt="Loading..." style={{ width: 64, height: 64 }} />
+        <span style={{ marginLeft: 10 }}>Loading Thinkora...</span>
       </div>
     );
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
