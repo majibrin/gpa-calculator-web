@@ -63,10 +63,14 @@ const AuthForm = ({ onAuthSuccess }) => {
       } else {
         setError(res.data.error || 'Authentication failed');
       }
-    } catch (err) {
+  /*  } catch (err) {
       console.error(err);
       setError('Server error. Try again later.');
-    } finally {
+   */
+}catch (err) {
+  console.error(err.response?.data || err);
+  setError(err.response?.data?.detail || err.response?.data?.error || err.message || 'Server error');
+ } finally {
       setLoading(false);
     }
   };
