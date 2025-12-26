@@ -2,8 +2,9 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import Loader from './Loader';
-import logo from '../assets/logo.png'; // your main logo
-import './Dashboard.css';
+import logo from '../assets/logo.png';
+
+import './Header.css';
 
 const Header = () => {
   const { user, logout } = useAuth();
