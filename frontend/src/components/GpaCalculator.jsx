@@ -1,4 +1,6 @@
 // src/components/GpaCalculator.jsx
+// Add this import at the top of GpaCalculator.jsx
+import './GpaCalculator.css';
 import React, { useState } from 'react';
 import {
   Plus,

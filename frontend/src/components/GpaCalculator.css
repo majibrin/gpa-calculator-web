@@ -1,180 +1,367 @@
-.gpa-container {
+/* GPA CALCULATOR STYLES */
+.gpa-calculator-container {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: #ffffff;
   border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #eee;
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
-.gpa-header {
+.gpa-calculator-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.mode-tabs {
+.gpa-mode-tabs {
   display: flex;
-  background: #f1f3f5;
-  padding: 4px;
+  background: #f8fafc;
+  padding: 0.25rem;
   border-radius: 8px;
+  gap: 0.25rem;
 }
 
-.mode-tabs button {
+.gpa-mode-tabs button {
   display: flex;
   align-items: center;
   border: none;
-  background: none;
-  padding: 6px 12px;
+  background: transparent;
+  padding: 0.5rem 0.875rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  color: #666;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.gpa-mode-tabs button:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.gpa-mode-tabs button.active {
+  background: #ffffff;
+  color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+}
+
+.gpa-close-btn {
+  background: #f3f4f6;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
 
-.mode-tabs button.active {
-  background: #fff;
-  color: #0d6efd;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.close-x {
-  background: none;
-  border: none;
-  color: #adb5bd;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
+.gpa-close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
 }
 
 .gpa-scroll-area {
-  max-height: 250px;
+  max-height: 280px;
   overflow-y: auto;
-  margin-bottom: 1rem;
-  padding-right: 4px;
+  margin-bottom: 1.25rem;
+  padding-right: 0.5rem;
 }
 
-.course-row {
+/* Custom scrollbar for GPA calculator */
+.gpa-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gpa-scroll-area::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.gpa-scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.gpa-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.gpa-course-row {
   display: grid;
-  grid-template-columns: 24px 1.5fr 1fr auto;
-  gap: 8px;
-  margin-bottom: 8px;
+  grid-template-columns: minmax(24px, auto) minmax(100px, 1fr) minmax(80px, 1fr) auto;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
   align-items: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.2s;
 }
 
-.sem-row {
-  grid-template-columns: 24px 1fr 1fr auto;
+.gpa-course-row:hover {
+  background: #f8fafc;
 }
 
-.row-label {
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: #adb5bd;
+.gpa-course-row.gpa-semester-row {
+  grid-template-columns: minmax(24px, auto) minmax(80px, 1fr) minmax(80px, 1fr) auto;
 }
 
-.course-row select, .course-row input {
-  padding: 8px;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 0.85rem;
+.gpa-row-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+}
+
+.gpa-course-row select,
+.gpa-course-row input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
   outline: none;
-}
-
-.del-btn {
-  background: #fff5f5;
-  color: #fa5252;
-  border: 1px solid #ffe3e3;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  background: white;
+  transition: all 0.2s;
   width: 100%;
-  padding: 8px;
-  background: #f8f9fa;
-  border: 1px dashed #dee2e6;
-  border-radius: 6px;
-  color: #6c757d;
+  box-sizing: border-box;
+}
+
+.gpa-course-row select:focus,
+.gpa-course-row input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.gpa-course-row select {
   cursor: pointer;
-  font-size: 0.8rem;
-  margin-top: 5px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
 }
 
-.gpa-footer-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.main-calc-btn {
-  flex: 3;
+.gpa-delete-btn {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0d6efd;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.gpa-delete-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.gpa-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gpa-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 8px;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.gpa-add-btn:hover {
+  background: #f1f5f9;
+  border-color: #9ca3af;
+}
+
+.gpa-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.gpa-calculate-btn {
+  flex-grow: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 0.875rem;
+  border-radius: 10px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.reset-btn {
-  flex: 1;
+.gpa-calculate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.gpa-calculate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gpa-reset-btn {
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f3f5;
-  color: #495057;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.gpa-result-box {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f0f7ff;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
   border-radius: 10px;
+  cursor: pointer;
+  padding: 0.875rem;
+  transition: all 0.2s;
+}
+
+.gpa-reset-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.gpa-result-container {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f0f7ff, #e0f2fe);
+  border-radius: 12px;
   text-align: center;
-  border: 1px solid #d0ebff;
+  border: 1px solid #dbeafe;
+  animation: fadeIn 0.3s ease;
 }
 
-.result-val {
-  font-size: 2.2rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gpa-result-value {
+  font-size: 2.5rem;
   font-weight: 800;
-  color: #0d6efd;
+  color: #1d4ed8;
+  margin: 0.5rem 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Mono', monospace;
 }
 
-.result-tag {
+.gpa-classification {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 0.375rem 1rem;
   border-radius: 20px;
   color: white;
-  font-size: 0.75rem;
-  font-weight: bold;
-  margin-top: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  letter-spacing: 0.5px;
 }
 
 .gpa-error {
-  background: #fff5f5;
-  color: #fa5252;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  margin-bottom: 10px;
-  border-left: 4px solid #fa5252;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.gpa-error::before {
+  content: "⚠️";
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .gpa-calculator-container {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .gpa-course-row {
+    grid-template-columns: 24px 1fr 1fr auto;
+    gap: 0.5rem;
+  }
+  
+  .gpa-course-row.gpa-semester-row {
+    grid-template-columns: 24px 1fr 1fr auto;
+  }
+  
+  .gpa-course-row select,
+  .gpa-course-row input {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .gpa-result-value {
+    font-size: 2rem;
+  }
+  
+  .gpa-actions {
+    flex-direction: column;
+  }
+  
+  .gpa-calculate-btn,
+  .gpa-reset-btn {
+    width: 100%;
+    flex-grow: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .gpa-mode-tabs button {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .gpa-course-row {
+    grid-template-columns: 20px 1fr 1fr auto;
+    gap: 0.375rem;
+  }
+  
+  .gpa-row-label {
+    font-size: 0.7rem;
+  }
+  
+  .gpa-add-btn {
+    padding: 0.625rem;
+    font-size: 0.8rem;
+  }
 }
