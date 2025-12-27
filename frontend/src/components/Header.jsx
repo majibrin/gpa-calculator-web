@@ -1,9 +1,9 @@
-// src/components/Header.jsx
+// src/components/Header.jsx - NO CHANGES NEEDED!
+// Your existing code remains 100% identical
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import Loader from './Loader';
 import logo from '../assets/logo.png';
-
 import './Header.css';
 
 const Header = () => {
