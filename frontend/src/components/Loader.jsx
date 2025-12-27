@@ -1,6 +1,7 @@
 // src/components/Loader.jsx - SIMPLIFIED VERSION
 import React from 'react';
 import './Loader.css';
+import loader from '../assets/loader.png';
 
 const Loader = ({ 
   message = 'Loading...', 
@@ -18,7 +19,7 @@ const Loader = ({
         {/* Logo/Image in center */}
         <div className="spinner-center">
           <img 
-            src="/assets/logo.png"  // Your logo
+            src={loader}  // Your logo
             alt="Loading"
             className="spinner-logo"
             onError={(e) => {
