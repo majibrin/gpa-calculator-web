@@ -1,231 +1,64 @@
-/* =====================================
-   THINKORA HEADER STYLES - TEXT LOGO VERSION
-   ===================================== */
-
 .dashboard-header {
-  width: 100%;
-  height: 80px;
+  height: 70px;
   background: #ffffff;
-  border-bottom: 1px solid #eaeaea;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  box-sizing: border-box;
+  border-bottom: 1px solid #e2e8f0;
   position: sticky;
   top: 0;
-  z-index: 100;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
 }
 
-/* LEFT SIDE - LOGO WITH TEXT + USER */
 .logo-user {
   display: flex;
   align-items: center;
   gap: 20px;
 }
-.logo-user img {
-  padding: 0;
-  margin: 0;
-}
-/* TEXT LOGO - WIDE FORMAT */
-.header-logo {
-  width: 160px; /* Wide enough for text logo */
-  height: 40px; /* Reasonable height */
-  object-fit: contain; /* Keeps aspect ratio */
-  object-position: left center; /* Aligns text to left */
-  transition: transform 0.2s ease;
-}
 
-.header-logo:hover {
-  transform: scale(1.03);
-}
-
-/* USER INFO */
-.user-info {
-  font-size: 1.1rem;
-  color: #374151;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.user-info span {
-  color: #3b82f6;
-  font-weight: 700;
-}
-
-/* RIGHT SIDE - ACTIONS */
-.header-actions {
+.brand-wrapper {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #1e293b;
 }
 
-/* LOGOUT BUTTON */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #64748b;
+  border-left: 1px solid #e2e8f0;
+  padding-left: 15px;
+}
+
+.user-info span span {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
 .logout-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fee2e2;
+  color: #ef4444;
   border: none;
-  padding: 0.75rem 1.25rem;
+  padding: 8px 16px;
   border-radius: 8px;
-  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  min-height: 44px;
+  transition: 0.2s;
 }
 
 .logout-btn:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+  background: #fecaca;
 }
 
-.logout-btn:active {
-  transform: translateY(0);
+@media (max-width: 600px) {
+  .user-info { display: none; }
 }
-
-/* =====================================
-   LOADER STATE
-   ===================================== */
-
-.header-loader {
-  width: 100%;
-  height: 80px;
-  background: #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #eaeaea;
-}
-
-.header-loader img {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* =====================================
-   RESPONSIVE DESIGN
-   ===================================== */
-
-@media (max-width: 1024px) {
-  .header-logo {
-    width: 140px;
-    height: 35px;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-header {
-    padding: 0 1.25rem;
-    height: 75px;
-  }
-
-  .header-logo {
-    width: 120px;
-    height: 30px;
-  }
-
-  .user-info {
-    font-size: 1rem;
-  }
-
-  .logout-btn {
-    padding: 0.65rem 1rem;
-    font-size: 0.9rem;
-    min-height: 40px;
-  }
-}
-
-@media (max-width: 640px) {
-  .dashboard-header {
-    padding: 0 1rem;
-    height: 70px;
-  }
-
-  .logo-user {
-    gap: 12px;
-  }
-
-  .header-logo {
-    width: 100px;
-    height: 25px;
-  }
-
-  .user-info {
-    font-size: 0.9rem;
-  }
-
-  .logout-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    min-height: 38px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-header {
-    height: 65px;
-  }
-
-  .header-logo {
-    width: 90px;
-    height: 22px;
-  }
-
-  .user-info {
-    display: none; /* Hide on very small screens */
-  }
-
-  .logout-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    min-height: 36px;
-  }
-}
-
-@media (max-width: 375px) {
-  .dashboard-header {
-    height: 60px;
-    padding: 0 0.75rem;
-  }
-
-  .header-logo {
-    width: 80px;
-    height: 20px;
-  }
-
-  .logout-btn {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.75rem;
-    min-height: 34px;
-  }
-}
-
-/* DARK MODE */
-@media (prefers-color-scheme: dark) {
-  .dashboard-header {
-    background: #1f2937;
-    border-bottom-color: #374151;
-  }
-
-  .user-info {
-    color: #e5e7eb;
-  }
-
-  .logout-btn {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-  }
-}	

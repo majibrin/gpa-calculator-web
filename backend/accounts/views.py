@@ -1,12 +1,9 @@
 from rest_framework import generics, permissions, serializers, viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from django.contrib.auth import get_user_model
+from rest_framework.decorators import api_view
 from .models import User, Course
 from .serializers import CourseSerializer, UserRegistrationSerializer
 
-# SERIALIZERS & REGISTRATION (Keep as is)
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -28,11 +25,11 @@ class UserRegistrationView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({'error': 'Registration failed.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Diagnostic change: return actual validation errors
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
         return Response({'success': True, 'user': {'username': user.username, 'email': user.email}}, status=status.HTTP_201_CREATED)
 
-# COURSE VIEWSET (Keep as is)
 class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CourseSerializer
@@ -43,7 +40,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-# GPA CALCULATION ENDPOINT (Keep as is)
 @api_view(['POST'])
 def calculate_gpa_endpoint(request):
     try:
@@ -70,7 +66,6 @@ def calculate_gpa_endpoint(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-# HEALTH CHECK (Keep as is)
 @api_view(['GET'])
 def health_check(request):
     return Response({'status':'ok'})

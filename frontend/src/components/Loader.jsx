@@ -1,45 +1,29 @@
-// src/components/Loader.jsx - SIMPLIFIED VERSION
 import React from 'react';
+import { GraduationCap, Loader2 } from 'lucide-react';
 import './Loader.css';
-import loader from '../assets/loader.png';
 
-const Loader = ({ 
-  message = 'Loading...', 
-  variant = 'default',
-  className = '',
-  showProgress = false
-}) => {
-  const containerClass = `loader-container ${variant === 'overlay' ? 'loader-overlay' : ''} ${className}`;
-  
+const Loader = ({ message = 'Study Assistant is loading...' }) => {
   return (
-    <div className={containerClass} role="status" aria-label={message}>
-      <div className={`loader-spinner ${variant}`}>
-        {/* Simple spinner ring */}
-        <div className="spinner-ring"></div>
-        {/* Logo/Image in center */}
-        <div className="spinner-center">
-          <img 
-            src={loader}  // Your logo
-            alt="Loading"
-            className="spinner-logo"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = 'T';
-            }}
+    <div className="loader-container" role="status">
+      <div className="loader-content" style={{ textAlign: 'center' }}>
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
+          <GraduationCap size={48} color="#3b82f6" />
+          <Loader2 
+            size={64} 
+            color="#3b82f6" 
+            className="animate-spin" 
+            style={{ 
+              position: 'absolute', 
+              top: '-8px', 
+              left: '-8px', 
+              opacity: 0.3 
+            }} 
           />
         </div>
-      </div>
-      
-      {message && (
-        <div className={`loader-text ${variant}`}>
+        <div className="loader-text" style={{ color: '#64748b', fontWeight: '500' }}>
           {message}
-          <span className="loading-dots">...</span>
         </div>
-      )}
-      
-      {showProgress && variant === 'default' && (
-        <div className="loader-progress"></div>
-      )}
+      </div>
     </div>
   );
 };
